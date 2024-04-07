@@ -1,0 +1,6 @@
+boto3
+google-play-scraper
+langchain
+crewai
+streamlit
+app-store-scraper

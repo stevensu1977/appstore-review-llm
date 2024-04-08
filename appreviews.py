@@ -74,7 +74,6 @@ bedrock_llm = initialize_llm()
 
 def split_data(data, page=1):
     """Tool to split data into pages of 50 items"""
-    print("xxxxx",page)
     if isinstance(data, list):
         total_pages = (len(data) + 49) // 50  # Calculate the total number of pages
         if page < 1 or page > total_pages:

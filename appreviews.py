@@ -91,8 +91,8 @@ def save_review(app_id,data):
             json.dump(data, file, cls=DateTimeEncoder,ensure_ascii=False, indent=4)
 
 @tool
-def get_apple_app_review(app_name:str, country:str, rank:int = -1):
-    """Tool to found Apple App Store App reviews by app name ,country and rank"""
+def get_apple_app_review(app_name:str, country:str, rank:int = -1,page:int=1):
+    """Tool to found Apple App Store App reviews by app name ,country ,rank and page"""
     try:
         app = AppStore(country=country, app_name=app_name)
         app.review(how_many=100)
@@ -111,9 +111,11 @@ def get_apple_app_review(app_name:str, country:str, rank:int = -1):
 
 
 
+
+
 @tool
 def load_local_file(file_name: str,page:int=1):
-    """Tool to load local file , page must start 1"""
+    """Tool to load local file , page must start from 1"""
     try:
         with open(file_name, "rb") as file:
             result = chardet.detect(file.read())
@@ -158,8 +160,8 @@ def get_steam_app_id(app_name:str):
         return None
     
 @tool
-def get_steam_app_reviews(app_id:str,country:str, rank:int = -1):
-    """Tool to found Steam App Store App reviews by app id , rank"""
+def get_steam_app_reviews(app_id:str,country:str, rank:int = -1,page:int=1):
+    """Tool to found Steam App Store App reviews by app id , rank , page """
     try:
         review_type = "all"
         if rank == 1:
@@ -196,8 +198,8 @@ def get_google_app_id(app_name:str):
 
 # Tool to found Google App Store App reviews by app id
 @tool
-def get_google_play_app_review(app_id:str,country:str, rank:int = -1 ):
-    """Tool to found Google App Store App reviews by app id ,country and rank"""
+def get_google_play_app_review(app_id:str,country:str,rank:int = -1,page:int=1 ):
+    """Tool to found Google App Store App reviews by app id ,country ,rank and page"""
     try:
         
         filter_score = None
@@ -253,10 +255,10 @@ researcher = Agent(
   
 )
 
-def init_app_crew(store:str,app_name:str,country:str, rank:int=-1,file:str="",output_stream=None):
+def init_app_crew(store:str,app_name:str,country:str, rank:int=-1,page:int=1, file:str="",output_stream=None):
     """
     This function is the main entry point for the application.
-    It takes an app name and a review rank as input, and returns the result of processing the app reviews.
+    It takes an app name and a review rank , page as input, and returns the result of processing the app reviews.
     """
     
     if output_stream is not None:
@@ -273,7 +275,7 @@ def init_app_crew(store:str,app_name:str,country:str, rank:int=-1,file:str="",ou
         
     # Create a task for the review_reader agent to fetch reviews for the given app ID and rank
     review_loading_task = Task(
-        description=f"""Use store: {store} , app_id: {app_id} and country:{country}, rank: {rank}, if store is Custom File , please load local "upload/{file}", if result more than 50, you need every time process 50 result, return reviews""",
+        description=f"""Use store: {store} ,app_name:{app_name} app_id: {app_id} and country:{country}, rank: {rank}, page: {page}, if store is Custom File , please load local "upload/{file}", if result more than 50, you need every time process 50 result, return reviews""",
         agent=review_loader,
         expected_output='A refined finalized version of the blog post in markdown format'
     )

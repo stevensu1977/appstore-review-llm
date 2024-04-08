@@ -103,7 +103,8 @@ with st.sidebar:
         ranks_options = ['ALL', '5', '4', '3','2','1']
         selected_ranks_option = st.selectbox('Select Ranks', ranks_options,disabled=st.session_state['processing'])
 
-        
+        #selected_pages_option = st.selectbox('Select Page ()', [1,2,3,4,5],disabled=st.session_state['processing'])
+        selected_pages_option = 1
         submitted = st.button("Submit")
         
         st.divider()
@@ -147,9 +148,9 @@ if submitted:
             if selected_ranks_option!="ALL":
                 rank = int(selected_ranks_option)
             if (selected_store_option == "Custom File"):
-                app_id,crew = init_app_crew(selected_store_option,app_name,country,rank,file=uploaded_file_name,output_stream=stream_to_expander)
+                app_id,crew = init_app_crew(selected_store_option,app_name,country,rank,page=selected_pages_option,file=uploaded_file_name,output_stream=stream_to_expander)
             else:
-                app_id,crew = init_app_crew( selected_store_option,app_name,country,rank,output_stream=stream_to_expander)
+                app_id,crew = init_app_crew( selected_store_option,app_name,country,rank,page=selected_pages_option,output_stream=stream_to_expander)
 
             with st.spinner('Analyzing...'):
                 try:

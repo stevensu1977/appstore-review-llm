@@ -67,12 +67,12 @@ with st.sidebar:
         st.header("App Store Option")
 
         # Define the options
-        options = ['Google Play', 'Apple Store', 'Custom File']
+        options = ['Google Play', 'Apple Store', 'Steam','Custom File']
 
         # Create the selectbox
         selected_store_option = st.selectbox('Select store', options,disabled=st.session_state['processing'])
 
-        st.write(selected_store_option)
+        
 
         if selected_store_option=="Custom File":
             uploaded_file = st.file_uploader("Custom Data File")
@@ -178,8 +178,10 @@ if submitted:
 
             st.session_state['processing'] = False
 
-
-            with open(f"output/{app_id}.json", "rb") as file:
+            raw_data_name = app_id
+            if selected_store_option =="Apple Store":
+                raw_data_name = app_name
+            with open(f"output/{raw_data_name}.json", "rb") as file:
                 file_data = file.read()
                 b64 = base64.b64encode(file_data).decode()
                 md = f'<a href="data:application/json;base64,{b64}" download="{app_name}.json">Download {app_name} Reviews Data</a>'

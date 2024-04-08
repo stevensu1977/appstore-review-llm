@@ -18,6 +18,8 @@ from langchain_community.chat_models import BedrockChat
 from crewai import Agent, Task, Crew
 from crewai.telemetry import Telemetry
 
+import steam  
+
 
 #Disable CrewAI Anonymous Telemetry
 def noop(*args, **kwargs):
@@ -85,6 +87,9 @@ def split_data(data, page=1):
         print("Input data is not a list.")
         return []
     
+def save_review(app_id,data):
+    with open(f"output/{app_id}.json", "w", encoding="utf-8") as file:
+            json.dump(data, file, cls=DateTimeEncoder,ensure_ascii=False, indent=4)
 
 @tool
 def get_apple_app_review(app_name:str, country:str, rank:int = -1):
@@ -94,7 +99,13 @@ def get_apple_app_review(app_name:str, country:str, rank:int = -1):
         app.review(how_many=100)
         result = app.reviews
 
-        return result
+        if rank==-1:
+            save_review(app_name, result)
+            return result
+        else:
+            filter_result = [item for item in result if item['rating'] == rank]
+            save_review(app_name, filter_result)
+            return filter_result
     except Exception as e:
         print(e)
         return []
@@ -136,6 +147,33 @@ def load_local_file(file_name: str,page:int=1):
         print(f"Error loading file: {e}")
         return []
     
+# Tool to found Steam AppID by app name   
+@tool
+def get_steam_app_id(app_name:str):
+    """Tool to found Steam App AppID by app name"""
+    try:
+        return steam.get_steam_app_id(game_name=app_name)
+
+    except Exception as e:
+        print(e)
+        return None
+    
+@tool
+def get_steam_app_reviews(app_id:str,country:str, rank:int = -1):
+    """Tool to found Steam App Store App reviews by app id , rank"""
+    try:
+        review_type = "all"
+        if rank == 1:
+            review_type = "negative"
+        elif rank==5:
+            review_type="positive"
+        result=steam.get_steam_n_reviews(appid=app_id, review_type=review_type)
+        save_review(app_id, result)
+        return result
+    except Exception as e:
+        print(e)
+        return None
+
 
 # Tool to found Google App Store AppID by app name   
 @tool
@@ -181,8 +219,9 @@ def get_google_play_app_review(app_id:str,country:str, rank:int = -1 ):
 
         # if len(result) > 0:
         #     process_app_review_with_llm(result)
-        with open(f"output/{app_id}.json", "w", encoding="utf-8") as file:
-            json.dump(result, file, cls=DateTimeEncoder,ensure_ascii=False, indent=4)
+        save_review(app_id, result)
+        # with open(f"output/{app_id}.json", "w", encoding="utf-8") as file:
+        #     json.dump(result, file, cls=DateTimeEncoder,ensure_ascii=False, indent=4)
 
         return [{"username":review["userName"],"content":review["content"],"score":review["score"]} for review in result]
     except Exception as e:
@@ -196,7 +235,7 @@ review_loader = Agent(
     goal='If user input is app id and store type google or apple ,you load App review  from a app id',
     backstory='Specializes in handling and interpreting app reviews documents',
     verbose=True,
-    tools=[get_google_play_app_review,get_apple_app_review,load_local_file],
+    tools=[get_google_play_app_review,get_apple_app_review,get_steam_app_reviews,load_local_file],
     allow_delegation=False,
     llm=bedrock_llm,
     memory=True,
@@ -226,8 +265,13 @@ def init_app_crew(store:str,app_name:str,country:str, rank:int=-1,file:str="",ou
     
 
     # Get the app ID from the app name using the get_google_app_id tool
-    app_id = get_google_app_id(app_name)
-
+    if store =='Google Play':
+        app_id = get_google_app_id(app_name)
+    elif store =='Steam':
+        app_id = get_steam_app_id(app_name)
+    else:
+        app_id=""
+        
     # Create a task for the review_reader agent to fetch reviews for the given app ID and rank
     review_loading_task = Task(
         description=f"""Use store: {store} , app_id: {app_id} and country:{country}, rank: {rank}, if store is Custom File , please load local "upload/{file}", if result more than 50, you need every time process 50 result, return reviews""",
@@ -294,7 +338,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Process app name and get reviews summary.')
     parser.add_argument('--app_store',default='Google', nargs='?', type=str, help='Google|Apple')
-    parser.add_argument('--app_name',default='TikTok', nargs='?', type=str, help='The name of the app to analyze')
+    parser.add_argument('--app_name',default='Minecraft', nargs='?', type=str, help='The name of the app to analyze')
     parser.add_argument('-i', '--interaction', action='store_true', help='Enable interactive mode')
     args = parser.parse_args()
     if args.interaction:

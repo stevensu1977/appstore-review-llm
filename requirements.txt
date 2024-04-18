@@ -3,4 +3,5 @@ google-play-scraper
 langchain
 crewai
 streamlit
+chardet
 app-store-scraper @ git+https://github.com/stevensu1977/app-store-scraper.git

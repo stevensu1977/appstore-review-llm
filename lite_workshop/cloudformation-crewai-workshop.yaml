@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy an EC2 instance with Langchain and CrewAI
+
+Parameters:
+  KeyPair:
+    Description: Key pair to use for the instance
+    Type: AWS::EC2::KeyPair::KeyName
+
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64'
+
+
+Resources:
+  bedrockInferenceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Ref bedrockInferencePolicy
+
+  bedrockInferenceInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref bedrockInferenceRole
+  
+  bedrockInferencePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowInference
+            Effect: Allow
+            Action:
+              - 'bedrock:InvokeModel'
+              - 'bedrock:InvokeModelWithResponseStream'
+            Resource: 'arn:aws:bedrock:*::foundation-model/*'
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: m5.large
+      KeyName: !Ref KeyPair
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      IamInstanceProfile: !Ref bedrockInferenceInstanceProfile
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 100
+            VolumeType: gp3
+      Tags:
+        - Key: Name
+          Value: CrewAI/Workshop
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            yum install git docker python3-pip nodejs -y
+            systemctl start docker
+            systemctl enable docker
+            usermod -aG docker ec2-user
+            
+            cd /home/ec2-user
+            git clone https://github.com/stevensu1977/appstore-review-llm
+            cd /home/ec2-user/appstore-review-llm/lite_workshop/
+            sudo chown -R ec2-user:ec2-user /home/ec2-user/appstore-review-llm
+            docker build -t appreview_workshop .
+            docker run -d \
+                  --volume $(pwd):/home/jovyan \
+                  --publish 80:8888 \
+                  --env JUPYTER_ENABLE_LAB="yes" \
+                  --env JUPYTER_TOKEN=Passw0rd \
+                  appreview_workshop
+                            
+
+Outputs:
+  InstancePublicIp:
+    Description: Public IP address of the EC2 instance
+    Value: !GetAtt EC2Instance.PublicIp

@@ -86,7 +86,7 @@ Resources:
             docker build -t appreview_workshop .
             docker run -d \
                   --volume $(pwd):/home/jovyan \
-                  --publish 80:8888 \
+                  --publish 8888:8888 \
                   --env JUPYTER_ENABLE_LAB="yes" \
                   --env JUPYTER_TOKEN=Passw0rd \
                   appreview_workshop

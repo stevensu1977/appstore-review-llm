@@ -52,6 +52,10 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8501
+          ToPort: 8501
+          CidrIp: 0.0.0.0/0
 
   EC2Instance:
     Type: AWS::EC2::Instance
@@ -87,6 +91,7 @@ Resources:
             docker run -d \
                   --volume $(pwd):/home/jovyan \
                   --publish 8888:8888 \
+                  --publish 8501:8501 \
                   --env JUPYTER_ENABLE_LAB="yes" \
                   --env JUPYTER_TOKEN=Passw0rd \
                   appreview_workshop

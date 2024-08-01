@@ -7,7 +7,7 @@ This project leverages the power of Large Language Models (LLMs) to analyze and 
 ## Getting Started
 
 ```
-git clone git@ssh.gitlab.aws.dev:wsuam/appstore-review-llm
+git clone https://github.com/stevensu1977/appstore-review-llm.git
 python -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt

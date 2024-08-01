@@ -4,7 +4,7 @@ lite version for crewai app store review workshop
 ## Getting Started
 
 ``` shell
-git clone git@ssh.gitlab.aws.dev:wsuam/appstore-review-llm
+git clone https://github.com/stevensu1977/appstore-review-llm/tree/main/lite_workshop.git
 cd lite_workshop
 python3.10 -m venv .venv
 source .venv/bin/activate
